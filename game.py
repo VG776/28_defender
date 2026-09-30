@@ -18,7 +18,7 @@ def sky_color(wave):
 
 def on_humanoid_rescued(humanoid):
     """Called when the player catches a falling humanoid; add a bonus or celebration here."""
-    pass
+    humanoid.rescue_popup = 1.0
 
 
 def bonus_life_threshold():
@@ -163,6 +163,10 @@ class Game:
             lander.update(dt, player, self.humanoids, self.landers, self.wave)
         for humanoid in self.humanoids[:]:
             humanoid.update(dt)
+            if hasattr(humanoid, "rescue_popup"):
+                humanoid.rescue_popup -= dt
+                if humanoid.rescue_popup <= 0:
+                    del humanoid.rescue_popup
             if humanoid.state == "dead":
                 self.humanoids.remove(humanoid)
             elif humanoid.state == "falling" and abs(wrap_delta(player.x, humanoid.x)) < 24 and abs(humanoid.y - player.y) < 24:
@@ -228,6 +232,11 @@ class Game:
         if player.invulnerable <= 0 or int(player.invulnerable * 10) % 2 == 0:
             f, cx = player.facing, VIEW_W / 2
             pygame.draw.polygon(screen, (240, 240, 250), [(cx + f * 18, player.y), (cx - f * 14, player.y - 8), (cx - f * 14, player.y + 8)])
+        for humanoid in self.humanoids:
+            if getattr(humanoid, "rescue_popup", 0) > 0:
+                sx = self.screen_x(humanoid.x)
+                popup = self.font.render("+500", True, (255, 255, 120))
+                screen.blit(popup, popup.get_rect(center=(sx, humanoid.y - 22)))
         self.draw_radar(screen)
         hud = self.font.render(f"Score {self.score}  Lives {self.lives}  Wave {self.wave}  Humanoids {len(self.humanoids)}", True, (240, 240, 240))
         screen.blit(hud, (10, RADAR_H + 4))
